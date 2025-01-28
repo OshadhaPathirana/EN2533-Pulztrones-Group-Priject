@@ -1,0 +1,56 @@
+#include <iostream>
+#include <thread>
+#include <chrono>
+
+using namespace std;
+
+// Mock functions to simulate sensor readings and robot movement
+int getToFDistance() {
+    // Replace with actual ToF sensor reading
+    return 12; // Example distance value
+}
+
+void stopRobot() {
+    cout << "Stopping robot" << endl;
+}
+
+void moveForward() {
+    cout << "Moving forward..." << endl;
+}
+
+// Main logic
+void navigateRobot() {
+    const int GATE_DISTANCE_THRESHOLD = 12.5;   // Distance threshold for detecting the gate
+    const int DELAY_AFTER_GATE = 500;           // Delay 500 milliseconds after detecting the gate
+
+    while (true) {
+        //  Check the gate distance using the ToF sensor
+        int gateDistance = getToFDistance();
+        cout << "ToF distance: " << gateDistance  << endl;
+
+        if (gateDistance <= GATE_DISTANCE_THRESHOLD) {
+            cout << "Gate detected!" << endl;
+            this_thread::sleep_for(chrono::milliseconds(DELAY_AFTER_GATE)); // Short delay
+            moveForward();
+            break; // Exit the loop after passing the gate
+        }
+
+        // Delay for loop execution
+        this_thread::sleep_for(chrono::milliseconds(100));
+    }
+}
+
+
+
+int main() {
+    try {
+        navigateRobot();
+    } catch (const exception& e) {
+        cerr << "Program terminated unexpectedly: " << e.what() << endl;
+    } catch (...) {
+        cerr << "Unknown error occurred." << endl;
+    }
+
+    return 0;
+}
+

@@ -1,0 +1,132 @@
+#include <Arduino.h>
+#include <QTRSensors.h>
+#include <PID_v1.h>
+
+// QTR-A Sensor Array
+#define NUM_SENSORS 8
+#define EMITTER_PIN 2
+QTRSensors qtr;
+uint16_t sensorValues[NUM_SENSORS];
+
+// Motor Driver Pins
+#define ENA 3
+#define IN1 4
+#define IN2 5
+#define IN3 6
+#define IN4 7
+#define ENB 8
+
+// PID Control
+double Setpoint, Input, Output;
+double Kp = 2, Ki = 0, Kd = 1;
+PID myPID(&Input, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);
+
+// Constants
+#define MAX_SPEED 255
+#define BASE_SPEED 150
+
+void setMotorSpeeds(int, int);
+void calibrateSensors();
+
+void setup() {
+  // Configure the QTR sensors
+  qtr.setTypeAnalog();
+  qtr.setSensorPins((const uint8_t[]){A0, A1, A2, A3, A4, A5, A6, A7}, NUM_SENSORS);
+  qtr.setEmitterPin(EMITTER_PIN);
+
+  // Initialize motor control pins
+  pinMode(ENA, OUTPUT);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+  // Calibrate the sensors
+  calibrateSensors();
+
+  // Initialize PID
+  Setpoint = 3500; // Adjust based on your sensor array
+  myPID.SetMode(AUTOMATIC);
+  myPID.SetOutputLimits(-MAX_SPEED, MAX_SPEED);
+
+  Serial.begin(9600);
+}
+
+
+
+void loop() {
+  // Read sensor values
+  uint16_t position = qtr.readLineBlack(sensorValues);
+
+  // Compute PID
+  Input = position;
+  myPID.Compute();
+
+  // Calculate motor speeds
+  int leftSpeed = BASE_SPEED + Output;
+  int rightSpeed = BASE_SPEED - Output;
+
+  // Constrain speeds
+  leftSpeed = constrain(leftSpeed, 0, MAX_SPEED);
+  rightSpeed = constrain(rightSpeed, 0, MAX_SPEED);
+
+  // Set motor directions and speeds
+  setMotorSpeeds(leftSpeed, rightSpeed);
+
+  // Debug output
+  Serial.print("Position: ");
+  Serial.print(position);
+  Serial.print(" Output: ");
+  Serial.print(Output);
+  Serial.print(" Left: ");
+  Serial.print(leftSpeed);
+  Serial.print(" Right: ");
+  Serial.println(rightSpeed);
+
+  delay(10);
+}
+
+void setMotorSpeeds(int leftSpeed, int rightSpeed) {
+  // Left motor
+  digitalWrite(IN1, leftSpeed > 0 ? HIGH : LOW);
+  digitalWrite(IN2, leftSpeed > 0 ? LOW : HIGH);
+  analogWrite(ENA, abs(leftSpeed));
+
+  // Right motor
+  digitalWrite(IN3, rightSpeed > 0 ? HIGH : LOW);
+  digitalWrite(IN4, rightSpeed > 0 ? LOW : HIGH);
+  analogWrite(ENB, abs(rightSpeed));
+}
+
+void calibrateSensors() {
+  Serial.println("Calibrating sensors...");
+  
+  // Turn on LED to indicate we are in calibration mode
+  digitalWrite(LED_BUILTIN, HIGH);
+  
+  for (uint16_t i = 0; i < 250; i++) {
+    qtr.calibrate();
+    delay(20);
+  }
+  
+  // Turn off LED to indicate calibration is complete
+  digitalWrite(LED_BUILTIN, LOW);
+  
+  Serial.println("Calibration complete");
+  
+  // Print calibrated minimum values
+  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
+    Serial.print(qtr.calibrationOn.minimum[i]);
+    Serial.print(' ');
+  }
+  Serial.println();
+  
+  // Print calibrated maximum values
+  for (uint8_t i = 0; i < NUM_SENSORS; i++) {
+    Serial.print(qtr.calibrationOn.maximum[i]);
+    Serial.print(' ');
+  }
+  Serial.println();
+  Serial.println();
+}
