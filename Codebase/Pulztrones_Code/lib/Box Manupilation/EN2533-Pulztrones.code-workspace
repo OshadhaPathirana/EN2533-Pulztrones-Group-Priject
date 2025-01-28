@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"name": "EN2533-Pulztrones",
+			"path": "../../../.."
+		},
+		{
+			"name": "Arduino_On_VS_Code01",
+			"path": "../../../../../../../PlatformIO/Projects/Arduino_On_VS_Code01"
+		},
+		{
+			"name": "Conveyor Belt",
+			"path": "D:/Oshadha/Professional Projects/Arduino Conveyor belt/Conveyor Belt"
+		},
+		{
+			"name": "FPGA001",
+			"path": "../../../../../../../PlatformIO/Projects/FPGA001"
+		}
+	],
+	"settings": {}
+}
